@@ -19,9 +19,10 @@ public class Notepad extends javax.swing.JFrame {
     /**
      * Creates new form Notepad
      */
+    private NotepadFunctions nf;
     public Notepad() {
         initComponents();
-        NotepadFunctions nf=new NotepadFunctions();
+        nf=new NotepadFunctions();
     }
 
     /**
@@ -34,7 +35,7 @@ public class Notepad extends javax.swing.JFrame {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTextPane1 = new javax.swing.JTextPane();
+        textFile = new javax.swing.JTextPane();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menuNew = new javax.swing.JMenuItem();
@@ -74,7 +75,7 @@ public class Notepad extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(964, 524));
 
-        jScrollPane1.setViewportView(jTextPane1);
+        jScrollPane1.setViewportView(textFile);
 
         getContentPane().add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
@@ -245,7 +246,7 @@ public class Notepad extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem13ActionPerformed
 
     private void saveMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuActionPerformed
-        // TODO add your handling code here:
+       nf.save(textFile);
     }//GEN-LAST:event_saveMenuActionPerformed
 
     private void menuSaveAsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuSaveAsActionPerformed
@@ -322,7 +323,6 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JPopupMenu.Separator jSeparator5;
     private javax.swing.JPopupMenu.Separator jSeparator6;
-    private javax.swing.JTextPane jTextPane1;
     private javax.swing.JMenuItem menuExit;
     private javax.swing.JMenuItem menuNew;
     private javax.swing.JMenuItem menuOpen;
@@ -330,5 +330,6 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuPrint;
     private javax.swing.JMenuItem menuSaveAs;
     private javax.swing.JMenuItem saveMenu;
+    private javax.swing.JTextPane textFile;
     // End of variables declaration//GEN-END:variables
 }

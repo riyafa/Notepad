@@ -1,11 +1,13 @@
 package Notepad;
 
+import javax.swing.JTextPane;
+
 /**
  *
  * @author riyafa
  */
 public class NotepadFunctions {
-    public void save(){
-        
+    
+    void save(JTextPane textFile) {
     }
 }
