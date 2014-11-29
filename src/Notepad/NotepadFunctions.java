@@ -1,5 +1,6 @@
 package Notepad;
 
+import java.io.PrintWriter;
 import javax.swing.JTextPane;
 
 /**
@@ -9,5 +10,6 @@ import javax.swing.JTextPane;
 public class NotepadFunctions {
     
     void save(JTextPane textFile) {
+        PrintWriter pw=new PrintWriter();
     }
 }
