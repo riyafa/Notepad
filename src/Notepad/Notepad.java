@@ -20,9 +20,11 @@ public class Notepad extends javax.swing.JFrame {
      * Creates new form Notepad
      */
     private NotepadFunctions nf;
+    private String name="Untitled";
     public Notepad() {
         initComponents();
-        nf=new NotepadFunctions();
+        nf=new NotepadFunctions(textFile,name);
+        setTitle(name);
     }
 
     /**
