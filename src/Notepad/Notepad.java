@@ -6,6 +6,15 @@
 
 package Notepad;
 
+import java.awt.Graphics;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import static java.awt.print.Printable.NO_SUCH_PAGE;
+import static java.awt.print.Printable.PAGE_EXISTS;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,8 +29,14 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.basic.BasicTextUI;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.StyleContext;
+import javax.swing.text.View;
 
 /**
  *
@@ -33,15 +47,25 @@ public class Notepad extends javax.swing.JFrame {
     /**
      * Creates new form Notepad
      */
-    private NotepadFunctions nf;
     private String name="Untitled";
     private FileFilter filter;
     private JFileChooser fileChooser;
     private File selectedFile;
     private Scanner sc;
     private JFileChooser saveAsFileChooser;
+    private boolean changes=false;
+    private static final boolean CANCEL=true;
+    private static final boolean OK=false;
+    private PrinterJob pj;
+    protected PrintView m_printView;
+    protected DefaultStyledDocument m_doc;
+    private StyleContext m_context;
+    private Printable printable;
     public Notepad() {
         initComponents();
+        m_context = new StyleContext();
+        m_doc = new DefaultStyledDocument(m_context);
+        textFile.setDocument(m_doc);
         fileChooser = new JFileChooser(){
         @Override
         public void approveSelection(){
@@ -54,13 +78,53 @@ public class Notepad extends javax.swing.JFrame {
         }           
     };
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        nf=new NotepadFunctions(textFile,name);
         setTitle(name+"-Notepad");
         filter =new FileNameExtensionFilter("TextDocuments(*.txt)" ,"txt");
         fileChooser.setFileFilter(filter);
         setIconImage(new ImageIcon(Notepad.class.getResource("icon.png")).getImage());
-        saveAsFileChooser = new JFileChooser();
+        saveAsFileChooser = new JFileChooser(){
+        @Override
+        public void approveSelection(){
+            File f = getSelectedFile();
+            if(f.exists() ){                   
+                int result=JOptionPane.showConfirmDialog(this, f.getName()+"already exists."
+                        + "\nDo you want to replace it?","Confirm Save As",
+                        JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+                if (result==JOptionPane.YES_OPTION) {
+                    super.approveSelection();
+                }
+            }else
+                super.approveSelection();
+        }           
+    };
+      textFile.getDocument().addDocumentListener(new DocumentListener() {
 
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                changes=true;
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                changes=true;
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                changes=true;
+            }
+      });
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                handleClosing();
+            }
+        });
+         pj = PrinterJob.getPrinterJob();
+         
+         printable=new Printer();
+         pj.setPrintable(printable);
 }
 
     /**
@@ -158,14 +222,29 @@ public class Notepad extends javax.swing.JFrame {
         jMenu1.add(jSeparator2);
 
         menuPageSetup.setText("Page Setup..");
+        menuPageSetup.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuPageSetupActionPerformed(evt);
+            }
+        });
         jMenu1.add(menuPageSetup);
 
         menuPrint.setText("Print...");
+        menuPrint.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuPrintActionPerformed(evt);
+            }
+        });
         jMenu1.add(menuPrint);
         jMenu1.add(jSeparator3);
 
         menuExit.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.CTRL_MASK));
         menuExit.setText("Exit");
+        menuExit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuExitActionPerformed(evt);
+            }
+        });
         jMenu1.add(menuExit);
 
         jMenuBar1.add(jMenu1);
@@ -274,7 +353,7 @@ public class Notepad extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void menuNewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuNewActionPerformed
-        // TODO add your handling code here:
+        saveDialog();        
     }//GEN-LAST:event_menuNewActionPerformed
 
     private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
@@ -286,42 +365,18 @@ public class Notepad extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem13ActionPerformed
 
     private void saveMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuActionPerformed
-       if("Untitled".equals(name)){
-           menuSaveAsActionPerformed(evt);
-       }else{           
-           try( BufferedWriter bw=new BufferedWriter(new FileWriter(selectedFile))) {              
-               textFile.write(bw);
-           } catch (IOException ex) {
-               JOptionPane.showMessageDialog(this, ex, "IOError", JOptionPane.ERROR_MESSAGE);
-           }
-}       
+       save();         
     }//GEN-LAST:event_saveMenuActionPerformed
 
     private void menuSaveAsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuSaveAsActionPerformed
         // TODO add your handling code here:.
-        FileNameExtensionFilter extensionFilter = new FileNameExtensionFilter("TextDocuments(*.txt)" ,"txt");
-        saveAsFileChooser.setDialogTitle("Save As");
-        saveAsFileChooser.setApproveButtonText("Save");
-      saveAsFileChooser.setFileFilter(extensionFilter);
-      int actionDialog = saveAsFileChooser.showOpenDialog(this);
-      if (actionDialog != JFileChooser.APPROVE_OPTION) {
-         return;
-      }
-
-      // !! File fileName = new File(SaveAs.getSelectedFile() + ".txt");
-      File file = saveAsFileChooser.getSelectedFile();
-      if (!file.getName().endsWith(".txt")) {
-         file = new File(file.getAbsolutePath() + ".txt");
-      }
-
-      try(BufferedWriter outFile= new BufferedWriter(new FileWriter(file))) {
-        textFile.write(outFile);
-      } catch (IOException ex) {
-         ex.printStackTrace(System.out);
-      } 
+        saveAs();
     }//GEN-LAST:event_menuSaveAsActionPerformed
 
     private void menuOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuOpenActionPerformed
+        if (changes) {
+            saveDialog();
+        }
         int status=fileChooser.showOpenDialog(null);
        if (status == JFileChooser.APPROVE_OPTION) {
            selectedFile=fileChooser.getSelectedFile();
@@ -335,11 +390,32 @@ public class Notepad extends javax.swing.JFrame {
                 }
                 textFile.setText(savetxt);
                 textFile.setCaretPosition(0);
+                changes=false;
             } catch (FileNotFoundException ex) {            
             }       
        }
     }//GEN-LAST:event_menuOpenActionPerformed
 
+    private void menuPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuPrintActionPerformed
+        if (pj.printDialog()) {
+            try {pj.print();}
+            catch (PrinterException ex) {
+               //JOptionPane.showMessageDialog(this, ex, "Error", JOptionPane.ERROR_MESSAGE);
+               JOptionPane.showMessageDialog(this, "The operation was cancelled by the user",
+                       "NotePad", JOptionPane.WARNING_MESSAGE);
+             }
+        }
+    }//GEN-LAST:event_menuPrintActionPerformed
+
+    private void menuPageSetupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuPageSetupActionPerformed
+        // TODO add your handling code here:
+        pj.setPrintable(printable,pj.pageDialog(pj.defaultPage()));
+    }//GEN-LAST:event_menuPageSetupActionPerformed
+
+    private void menuExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuExitActionPerformed
+        handleClosing();
+    }//GEN-LAST:event_menuExitActionPerformed
+    
     /**
      * @param args the command line arguments
      */
@@ -415,4 +491,99 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JScrollPane scrollPane;
     private javax.swing.JTextArea textFile;
     // End of variables declaration//GEN-END:variables
+
+    private boolean saveDialog() {
+        if (changes) {
+            String msg="<html><body><p style='color: blue; font-size:16pt'>Do you want to save changes to "
+                    +name+"?</p></body></html>";
+            int option=JOptionPane.showOptionDialog(this, msg,
+                    "Notepad", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, 
+                    null, new String[]{"Save","Don't Save","Cancel"}, "Save");
+            if (option==0) {
+                return save();
+            }else if(option==2){
+               return CANCEL;
+            }
+             //if option is Don't save
+                textFile.setText("");
+                name="Untitled";
+                setTitle(name+"-Notepad");
+                changes=false;
+        }else{//if no changes
+            textFile.setText("");
+            name="Untitled";
+            setTitle(name+"-Notepad");
+        }
+        return OK;
+    }
+
+    private boolean save() {
+        if("Untitled".equals(name)){
+           return saveAs();
+       }else{           
+           try( BufferedWriter bw=new BufferedWriter(new FileWriter(selectedFile))) {              
+               textFile.write(bw);
+               changes=false;               
+           } catch (IOException ex) {
+               JOptionPane.showMessageDialog(this, ex, "IOError", JOptionPane.ERROR_MESSAGE);
+           }
+        }
+        return OK;
+    }
+
+    private boolean saveAs() {
+        FileNameExtensionFilter extensionFilter = new FileNameExtensionFilter("TextDocuments(*.txt)" ,"txt");
+        saveAsFileChooser.setDialogTitle("Save As");
+        saveAsFileChooser.setApproveButtonText("Save");
+      saveAsFileChooser.setFileFilter(extensionFilter);
+      int actionDialog = saveAsFileChooser.showOpenDialog(this);
+      if (actionDialog != JFileChooser.APPROVE_OPTION) {
+         return CANCEL;
+      }
+
+      // !! File fileName = new File(SaveAs.getSelectedFile() + ".txt");
+      selectedFile = saveAsFileChooser.getSelectedFile();
+      name=selectedFile.getName();
+      if (!selectedFile.getName().endsWith(".txt")) {
+         selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
+      }
+      return save();     
+    }
+    private void handleClosing(){
+        if (saveDialog()!=CANCEL) {
+            dispose();
+        }
+    }
+    class Printer implements Printable {
+
+            @Override
+            public int print(Graphics pg, PageFormat pageFormat, int pageIndex) throws PrinterException {
+                pg.translate((int)pageFormat.getImageableX(),  
+        (int)pageFormat.getImageableY());  
+        int wPage = (int)pageFormat.getImageableWidth();  
+        int hPage = (int)pageFormat.getImageableHeight();  
+        pg.setClip(0, 0, wPage, hPage);  
+          
+        // Only do this once per print  
+        if (m_printView == null) {  
+            BasicTextUI btui = (BasicTextUI)textFile.getUI();  
+            View root = btui.getRootView( textFile );  
+            m_printView = new PrintView(  
+            m_doc.getDefaultRootElement(),  
+            root, wPage, hPage);  
+        }  
+          
+        boolean bContinue = m_printView.paintPage(pg,  
+        hPage, pageIndex);  
+        System.gc();  
+          
+        if (bContinue)  
+            return PAGE_EXISTS;  
+        else {  
+            m_printView = null;  
+            return NO_SUCH_PAGE;  
+        } 
+            }
+        }
 }
+
