@@ -6,9 +6,23 @@
 
 package Notepad;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  *
@@ -21,11 +35,33 @@ public class Notepad extends javax.swing.JFrame {
      */
     private NotepadFunctions nf;
     private String name="Untitled";
+    private FileFilter filter;
+    private JFileChooser fileChooser;
+    private File selectedFile;
+    private Scanner sc;
+    private JFileChooser saveAsFileChooser;
     public Notepad() {
         initComponents();
+        fileChooser = new JFileChooser(){
+        @Override
+        public void approveSelection(){
+            File f = getSelectedFile();
+            if(!f.exists() ){                   
+                JOptionPane.showMessageDialog(this, f.getName()+"\nFile not found."
+                        + "\nCheck the filename and try again.","Open", JOptionPane.WARNING_MESSAGE);                   
+            }else
+                super.approveSelection();
+        }           
+    };
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         nf=new NotepadFunctions(textFile,name);
-        setTitle(name);
-    }
+        setTitle(name+"-Notepad");
+        filter =new FileNameExtensionFilter("TextDocuments(*.txt)" ,"txt");
+        fileChooser.setFileFilter(filter);
+        setIconImage(new ImageIcon(Notepad.class.getResource("icon.png")).getImage());
+        saveAsFileChooser = new JFileChooser();
+
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -36,8 +72,8 @@ public class Notepad extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        textFile = new javax.swing.JTextPane();
+        scrollPane = new javax.swing.JScrollPane();
+        textFile = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menuNew = new javax.swing.JMenuItem();
@@ -77,9 +113,11 @@ public class Notepad extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(964, 524));
 
-        jScrollPane1.setViewportView(textFile);
+        textFile.setColumns(20);
+        textFile.setRows(5);
+        scrollPane.setViewportView(textFile);
 
-        getContentPane().add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        getContentPane().add(scrollPane, java.awt.BorderLayout.CENTER);
 
         jMenu1.setText("File");
 
@@ -248,15 +286,58 @@ public class Notepad extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem13ActionPerformed
 
     private void saveMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuActionPerformed
-       nf.save(textFile);
+       if("Untitled".equals(name)){
+           menuSaveAsActionPerformed(evt);
+       }else{           
+           try( BufferedWriter bw=new BufferedWriter(new FileWriter(selectedFile))) {              
+               textFile.write(bw);
+           } catch (IOException ex) {
+               JOptionPane.showMessageDialog(this, ex, "IOError", JOptionPane.ERROR_MESSAGE);
+           }
+}       
     }//GEN-LAST:event_saveMenuActionPerformed
 
     private void menuSaveAsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuSaveAsActionPerformed
-        // TODO add your handling code here:
+        // TODO add your handling code here:.
+        FileNameExtensionFilter extensionFilter = new FileNameExtensionFilter("TextDocuments(*.txt)" ,"txt");
+        saveAsFileChooser.setDialogTitle("Save As");
+        saveAsFileChooser.setApproveButtonText("Save");
+      saveAsFileChooser.setFileFilter(extensionFilter);
+      int actionDialog = saveAsFileChooser.showOpenDialog(this);
+      if (actionDialog != JFileChooser.APPROVE_OPTION) {
+         return;
+      }
+
+      // !! File fileName = new File(SaveAs.getSelectedFile() + ".txt");
+      File file = saveAsFileChooser.getSelectedFile();
+      if (!file.getName().endsWith(".txt")) {
+         file = new File(file.getAbsolutePath() + ".txt");
+      }
+
+      try(BufferedWriter outFile= new BufferedWriter(new FileWriter(file))) {
+        textFile.write(outFile);
+      } catch (IOException ex) {
+         ex.printStackTrace(System.out);
+      } 
     }//GEN-LAST:event_menuSaveAsActionPerformed
 
     private void menuOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuOpenActionPerformed
-        // TODO add your handling code here:
+        int status=fileChooser.showOpenDialog(null);
+       if (status == JFileChooser.APPROVE_OPTION) {
+           selectedFile=fileChooser.getSelectedFile();
+           name=selectedFile.getName();
+           setTitle(name+"-Notepad");
+            try {
+                String savetxt="";
+                sc=new Scanner(new BufferedInputStream(new FileInputStream(selectedFile)));
+                while(sc.hasNextLine()){
+                    savetxt+=sc.nextLine()+"\n";
+                }
+                textFile.setText(savetxt);
+                textFile.setCaretPosition(0);
+            } catch (FileNotFoundException ex) {            
+            }       
+       }
     }//GEN-LAST:event_menuOpenActionPerformed
 
     /**
@@ -318,7 +399,6 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JMenuItem jMenuItem9;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
@@ -332,6 +412,7 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuPrint;
     private javax.swing.JMenuItem menuSaveAs;
     private javax.swing.JMenuItem saveMenu;
-    private javax.swing.JTextPane textFile;
+    private javax.swing.JScrollPane scrollPane;
+    private javax.swing.JTextArea textFile;
     // End of variables declaration//GEN-END:variables
 }
