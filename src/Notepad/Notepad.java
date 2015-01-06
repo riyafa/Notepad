@@ -61,11 +61,21 @@ public class Notepad extends javax.swing.JFrame {
     protected DefaultStyledDocument m_doc;
     private StyleContext m_context;
     private Printable printable;
+    private UndoManager manager;
+    private boolean unredo=true;
+    private BasicAction cutAction, pasteAction,copyAction;
+    
+    
     public Notepad() {
         initComponents();
+        CutAction cutAction=new CutAction("Cut", null);
+        cutAction.setTextComponent(textFile);
+        
         m_context = new StyleContext();
         m_doc = new DefaultStyledDocument(m_context);
         textFile.setDocument(m_doc);
+        manager = new UndoManager();
+        textFile.getDocument().addUndoableEditListener(manager);
         fileChooser = new JFileChooser(){
         @Override
         public void approveSelection(){
@@ -102,18 +112,23 @@ public class Notepad extends javax.swing.JFrame {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 changes=true;
+                menuUndo.setEnabled(true);
+               // System.out.println(e);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
                 changes=true;
+                menuUndo.setEnabled(true);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
                 changes=true;
+                menuUndo.setEnabled(true);
             }
       });
+
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
@@ -125,6 +140,8 @@ public class Notepad extends javax.swing.JFrame {
          
          printable=new Printer();
          pj.setPrintable(printable);
+         
+       
 }
 
     /**
@@ -149,20 +166,26 @@ public class Notepad extends javax.swing.JFrame {
         menuPrint = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
         menuExit = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        jMenuItem2 = new javax.swing.JMenuItem();
+        menuEdit = new javax.swing.JMenu();
+        menuUndo = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem4 = new javax.swing.JMenuItem();
-        jMenuItem5 = new javax.swing.JMenuItem();
-        jMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem7 = new javax.swing.JMenuItem();
+        cutAction=new CutAction("Cut", null);
+        cutAction.setTextComponent(textFile);
+        menuCut = new javax.swing.JMenuItem(cutAction);
+        copyAction=new CopyAction("Copy", null);
+        copyAction.setTextComponent(textFile);
+        menuCopy = new javax.swing.JMenuItem(copyAction);
+        pasteAction=new PasteAction("Paste", null);
+        pasteAction.setTextComponent(textFile);
+        menuPaste = new javax.swing.JMenuItem(pasteAction);
+        menuDelete = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem8 = new javax.swing.JMenuItem();
+        menuFind = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem10 = new javax.swing.JMenuItem();
         jMenuItem11 = new javax.swing.JMenuItem();
         jSeparator5 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem12 = new javax.swing.JMenuItem();
+        menuSelect = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
@@ -249,62 +272,76 @@ public class Notepad extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu1);
 
-        jMenu2.setText("Edit");
-
-        jMenuItem2.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem2.setText("Undo");
-        jMenuItem2.setEnabled(false);
-        jMenu2.add(jMenuItem2);
-        jMenu2.add(jSeparator1);
-
-        jMenuItem4.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_X, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem4.setText("Cut");
-        jMenuItem4.setEnabled(false);
-        jMenu2.add(jMenuItem4);
-
-        jMenuItem5.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem5.setText("Copy");
-        jMenuItem5.setEnabled(false);
-        jMenu2.add(jMenuItem5);
-
-        jMenuItem6.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem6.setText("Paste");
-        jMenu2.add(jMenuItem6);
-
-        jMenuItem7.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DELETE, 0));
-        jMenuItem7.setText("Delete");
-        jMenuItem7.setEnabled(false);
-        jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem7ActionPerformed(evt);
+        menuEdit.setText("Edit");
+        menuEdit.addMenuListener(new javax.swing.event.MenuListener() {
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            }
+            public void menuDeselected(javax.swing.event.MenuEvent evt) {
+            }
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                menuEditMenuSelected(evt);
             }
         });
-        jMenu2.add(jMenuItem7);
-        jMenu2.add(jSeparator4);
 
-        jMenuItem8.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem8.setText("Find...");
-        jMenuItem8.setEnabled(false);
-        jMenu2.add(jMenuItem8);
+        menuUndo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_MASK));
+        menuUndo.setText("Undo");
+        menuUndo.setEnabled(false);
+        menuUndo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuUndoActionPerformed(evt);
+            }
+        });
+        menuEdit.add(menuUndo);
+        menuEdit.add(jSeparator1);
+        menuEdit.add(menuCut);
+        menuEdit.add(menuCopy);
+        menuEdit.add(menuPaste);
+
+        menuDelete.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DELETE, 0));
+        menuDelete.setText("Delete");
+        menuDelete.setEnabled(false);
+        menuDelete.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuDeleteActionPerformed(evt);
+            }
+        });
+        menuEdit.add(menuDelete);
+        menuEdit.add(jSeparator4);
+
+        menuFind.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
+        menuFind.setText("Find...");
+        menuFind.setEnabled(false);
+        menuFind.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuFindActionPerformed(evt);
+            }
+        });
+        menuEdit.add(menuFind);
 
         jMenuItem9.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F3, 0));
         jMenuItem9.setText("Find Next");
         jMenuItem9.setEnabled(false);
-        jMenu2.add(jMenuItem9);
+        menuEdit.add(jMenuItem9);
 
         jMenuItem10.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem10.setText("Replace...");
-        jMenu2.add(jMenuItem10);
+        menuEdit.add(jMenuItem10);
 
         jMenuItem11.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem11.setText("Go To...");
         jMenuItem11.setEnabled(false);
-        jMenu2.add(jMenuItem11);
-        jMenu2.add(jSeparator5);
+        menuEdit.add(jMenuItem11);
+        menuEdit.add(jSeparator5);
 
-        jMenuItem12.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem12.setText("Select All");
-        jMenu2.add(jMenuItem12);
+        menuSelect.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_MASK));
+        menuSelect.setMnemonic('c');
+        menuSelect.setText("Select All");
+        menuSelect.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuSelectActionPerformed(evt);
+            }
+        });
+        menuEdit.add(menuSelect);
 
         jMenuItem13.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
         jMenuItem13.setText("Time/Date");
@@ -313,9 +350,9 @@ public class Notepad extends javax.swing.JFrame {
                 jMenuItem13ActionPerformed(evt);
             }
         });
-        jMenu2.add(jMenuItem13);
+        menuEdit.add(jMenuItem13);
 
-        jMenuBar1.add(jMenu2);
+        jMenuBar1.add(menuEdit);
 
         jMenu3.setText("Format");
 
@@ -357,7 +394,7 @@ public class Notepad extends javax.swing.JFrame {
     }//GEN-LAST:event_menuNewActionPerformed
 
     private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
-        // TODO add your handling code here:
+       textFile.replaceSelection("");
     }//GEN-LAST:event_jMenuItem7ActionPerformed
 
     private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed
@@ -415,6 +452,93 @@ public class Notepad extends javax.swing.JFrame {
     private void menuExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuExitActionPerformed
         handleClosing();
     }//GEN-LAST:event_menuExitActionPerformed
+
+    private void menuUndoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuUndoActionPerformed
+        if (unredo) {
+             if (manager.canUndo()) {
+                manager.undo();
+                unredo=false;
+            }
+        }else{
+            if(manager.canRedo()){
+                manager.redo();
+                unredo=true;
+            }
+        }
+        
+        
+    }//GEN-LAST:event_menuUndoActionPerformed
+
+    private void menuEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuEditActionPerformed
+        System.out.println(cutAction.isEnabled());
+        if (cutAction.isEnabled()) {
+            menuCut.setEnabled(true);
+        }else{
+            menuCut.setEnabled(false);
+        }
+        if (copyAction.isEnabled()) {
+            menuCopy.setEnabled(true);
+        }else{
+            menuCopy.setEnabled(false);
+        }
+        if (pasteAction.isEnabled()) {
+            menuPaste.setEnabled(true);
+        }else{
+            menuPaste.setEnabled(false);
+        }
+        if (textFile.getSelectedText() == null &&
+            textFile.getSelectedText().length() <= textFile.getText().length()) {
+            menuSelect.setEnabled(false);
+        } else {
+            menuSelect.setEnabled(true);
+        }
+        if (textFile.getSelectedText()!=null) {
+            menuDelete.setEnabled(true);
+        } else {
+            menuDelete.setEnabled(false);
+        }
+    }//GEN-LAST:event_menuEditActionPerformed
+
+    private void menuSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuSelectActionPerformed
+       textFile.selectAll();
+    }//GEN-LAST:event_menuSelectActionPerformed
+
+    private void menuFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuFindActionPerformed
+       
+    }//GEN-LAST:event_menuFindActionPerformed
+
+    private void menuDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuDeleteActionPerformed
+        textFile.replaceSelection("");
+    }//GEN-LAST:event_menuDeleteActionPerformed
+
+    private void menuEditMenuSelected(javax.swing.event.MenuEvent evt) {//GEN-FIRST:event_menuEditMenuSelected
+        if (cutAction.isEnabled()) {
+            menuCut.setEnabled(true);
+        }else{
+            menuCut.setEnabled(false);
+        }
+        if (copyAction.isEnabled()) {
+            menuCopy.setEnabled(true);
+        }else{
+            menuCopy.setEnabled(false);
+        }
+        if (pasteAction.isEnabled()) {
+            menuPaste.setEnabled(true);
+        }else{
+            menuPaste.setEnabled(false);
+        }
+        if (textFile.getSelectedText() == null &&
+            textFile.getSelectedText().length() <= textFile.getText().length()) {
+            menuSelect.setEnabled(false);
+        } else {
+            menuSelect.setEnabled(true);
+        }
+        if (textFile.getSelectedText()!=null) {
+            menuDelete.setEnabled(true);
+        } else {
+            menuDelete.setEnabled(false);
+        }
+    }//GEN-LAST:event_menuEditMenuSelected
     
     /**
      * @param args the command line arguments
@@ -455,25 +579,17 @@ public class Notepad extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
     private javax.swing.JMenu jMenu5;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem10;
     private javax.swing.JMenuItem jMenuItem11;
-    private javax.swing.JMenuItem jMenuItem12;
     private javax.swing.JMenuItem jMenuItem13;
     private javax.swing.JMenuItem jMenuItem14;
     private javax.swing.JMenuItem jMenuItem15;
     private javax.swing.JMenuItem jMenuItem16;
     private javax.swing.JMenuItem jMenuItem17;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem4;
-    private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JMenuItem jMenuItem6;
-    private javax.swing.JMenuItem jMenuItem7;
-    private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
@@ -481,12 +597,20 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JPopupMenu.Separator jSeparator5;
     private javax.swing.JPopupMenu.Separator jSeparator6;
+    private javax.swing.JMenuItem menuCopy;
+    private javax.swing.JMenuItem menuCut;
+    private javax.swing.JMenuItem menuDelete;
+    private javax.swing.JMenu menuEdit;
     private javax.swing.JMenuItem menuExit;
+    private javax.swing.JMenuItem menuFind;
     private javax.swing.JMenuItem menuNew;
     private javax.swing.JMenuItem menuOpen;
     private javax.swing.JMenuItem menuPageSetup;
+    private javax.swing.JMenuItem menuPaste;
     private javax.swing.JMenuItem menuPrint;
     private javax.swing.JMenuItem menuSaveAs;
+    private javax.swing.JMenuItem menuSelect;
+    private javax.swing.JMenuItem menuUndo;
     private javax.swing.JMenuItem saveMenu;
     private javax.swing.JScrollPane scrollPane;
     private javax.swing.JTextArea textFile;
