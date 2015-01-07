@@ -6,18 +6,57 @@
 
 package Notepad;
 
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
 /**
  *
  * @author A.H.F. Riyafa
  */
 public class FindReplace extends javax.swing.JDialog {
-
+    private Find find;
     /**
      * Creates new form FindReplace
      */
     public FindReplace(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+    }    
+
+    public FindReplace(java.awt.Frame parent, boolean modal, Find find) {
+        this(parent,modal);
+        this.find=find;
+        findField.getDocument().addDocumentListener(new DocumentListener() {
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                buttonFind.setEnabled(true);
+                buttonReplace.setEnabled(true);
+                buttonReplaceAll.setEnabled(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (findField.getText().length()!=0) {
+                    buttonFind.setEnabled(true);
+                    buttonReplace.setEnabled(true);
+                    buttonReplaceAll.setEnabled(true);
+                }else{
+                    buttonFind.setEnabled(false);
+                    buttonReplace.setEnabled(false);
+                    buttonReplaceAll.setEnabled(false);
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                if (findField.getText().length()!=0) {
+                    buttonFind.setEnabled(true);
+                }else{
+                    buttonFind.setEnabled(false);
+                }
+            }
+        });
     }
 
     /**
@@ -30,30 +69,51 @@ public class FindReplace extends javax.swing.JDialog {
     private void initComponents() {
 
         jLabel1 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
-        jButton1 = new javax.swing.JButton();
+        findField = new javax.swing.JTextField();
+        buttonReplaceAll = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
-        jTextField3 = new javax.swing.JTextField();
-        jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
-        jCheckBox1 = new javax.swing.JCheckBox();
+        replaceField = new javax.swing.JTextField();
+        buttonFind = new javax.swing.JButton();
+        buttonCancel = new javax.swing.JButton();
+        buttonReplace = new javax.swing.JButton();
+        matchCaseText = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setResizable(false);
 
         jLabel1.setText("Find what:");
 
-        jButton1.setText("Replace All");
+        buttonReplaceAll.setText("Replace All");
+        buttonReplaceAll.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonReplaceAllActionPerformed(evt);
+            }
+        });
 
         jLabel2.setText("Replace with:");
 
-        jButton2.setText("Find Next");
+        buttonFind.setText("Find Next");
+        buttonFind.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonFindActionPerformed(evt);
+            }
+        });
 
-        jButton3.setText("Cancel");
+        buttonCancel.setText("Cancel");
+        buttonCancel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonCancelActionPerformed(evt);
+            }
+        });
 
-        jButton4.setText("Replace");
+        buttonReplace.setText("Replace");
+        buttonReplace.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonReplaceActionPerformed(evt);
+            }
+        });
 
-        jCheckBox1.setText("Match case");
+        matchCaseText.setText("Match case");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -68,18 +128,18 @@ public class FindReplace extends javax.swing.JDialog {
                             .addComponent(jLabel1))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
-                            .addComponent(jTextField3)))
-                    .addComponent(jCheckBox1))
+                            .addComponent(findField, javax.swing.GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
+                            .addComponent(replaceField)))
+                    .addComponent(matchCaseText))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(buttonReplaceAll, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(buttonCancel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(buttonFind, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(buttonReplace, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -88,28 +148,49 @@ public class FindReplace extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2))
+                    .addComponent(findField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(buttonFind))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton4))
+                    .addComponent(replaceField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(buttonReplace))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton1)
+                .addComponent(buttonReplaceAll)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton3)
+                        .addComponent(buttonCancel)
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 21, Short.MAX_VALUE)
-                        .addComponent(jCheckBox1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(matchCaseText)
                         .addGap(42, 42, 42))))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void buttonReplaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonReplaceActionPerformed
+       find.setReplace(true);
+      replace();
+        find.findNext();      
+    }//GEN-LAST:event_buttonReplaceActionPerformed
+
+    private void buttonReplaceAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonReplaceAllActionPerformed
+        replace();
+        find.replaceAll();
+    }//GEN-LAST:event_buttonReplaceAllActionPerformed
+
+    private void buttonFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonFindActionPerformed
+       find.setReplace(false);
+       replace();
+       find.findNext();
+    }//GEN-LAST:event_buttonFindActionPerformed
+
+    private void buttonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonCancelActionPerformed
+        setVisible(false);
+    }//GEN-LAST:event_buttonCancelActionPerformed
 
     /**
      * @param args the command line arguments
@@ -154,14 +235,28 @@ public class FindReplace extends javax.swing.JDialog {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JCheckBox jCheckBox1;
+    private javax.swing.JButton buttonCancel;
+    private javax.swing.JButton buttonFind;
+    private javax.swing.JButton buttonReplace;
+    private javax.swing.JButton buttonReplaceAll;
+    private javax.swing.JTextField findField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
+    private javax.swing.JCheckBox matchCaseText;
+    private javax.swing.JTextField replaceField;
     // End of variables declaration//GEN-END:variables
+
+    private void replace() {
+        // Get the text to find...convert it to lower case for eaiser comparision
+        find.setFindIt(findField.getText());   
+         find.setFind(find.getFindIt());
+        if (!matchCaseText.isSelected()) {
+            find.setFind(find.getFindIt().toLowerCase());
+        }
+        if (replaceField.getText().length()!=0) {
+            find.setReplaceTxt(replaceField.getText());
+        }
+        find.setMatchCaseVal(matchCaseText.isSelected());
+    }
+
 }

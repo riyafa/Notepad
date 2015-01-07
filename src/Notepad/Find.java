@@ -22,13 +22,19 @@ public class Find extends javax.swing.JDialog {
     private JTextArea textFile;
     private int pos;
     private String findIt=null, find;
+    private boolean replace;
+    private String replaceTxt="";
+    private boolean matchCaseVal;
+    
     /**
      * Creates new form FInd
      */
     public Find(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
+        this.replace = false;
         this.pos = 0;
         initComponents();
+        matchCaseVal=matchCaseText.isSelected();
     }
 
     public Find(java.awt.Frame parent, boolean modal,JTextArea textFile){
@@ -181,11 +187,52 @@ public class Find extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    public boolean isMatchCaseVal() {
+        return matchCaseVal;
+    }
+
+    public void setMatchCaseVal(boolean matchCaseVal) {
+        this.matchCaseVal = matchCaseVal;
+    }
+public String getReplaceTxt() {
+        return replaceTxt;
+    }
+
+    public void setReplaceTxt(String replaceTxt) {
+        this.replaceTxt = replaceTxt;
+    }
+
+    public String getFindIt() {
+        return findIt;
+    }
+
+    public void setFindIt(String findIt) {
+        this.findIt = findIt;
+    }
+
+    public String getFind() {
+        return find;
+    }
+
+    public void setFind(String find) {
+        this.find = find;
+    }
+
+    
+    public boolean isReplace() {
+        return replace;
+    }
+
+    public void setReplace(boolean replace) {
+        this.replace = replace;
+    }    
+
+    
     private void buttonFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonFindActionPerformed
        // Get the text to find...convert it to lower case for eaiser comparision
         findIt = findField.getText();   
          find=findIt;
-        if (!matchCaseText.isSelected()) {
+        if (!matchCaseVal) {
             find=findIt.toLowerCase();
         }
         findNext();
@@ -258,13 +305,13 @@ public class Find extends javax.swing.JDialog {
         }
     }
 
-    private void findNext() {
+    public void findNext() {
         
          pos=textFile.getCaretPosition();
         // Focus the text area, otherwise the highlighting won't show up
         textFile.requestFocusInWindow();
         // Make sure we have a valid search term
-        if (find != null && find.length() > 0 && downRadio.isSelected()) {
+        if (find != null && find.length() > 0 && (downRadio.isSelected()||replace)) {
             Document document = textFile.getDocument();           
             int findLength = find.length();
             try {
@@ -275,7 +322,7 @@ public class Find extends javax.swing.JDialog {
                 while (pos + findLength <= document.getLength()) {
                     // Extract the text from teh docuemnt
                     String match = document.getText(pos, findLength);
-                    if (!matchCaseText.isSelected()) {
+                    if (!matchCaseVal) {
                         match=match.toLowerCase();
                     }
                     // Check to see if it matches or request
@@ -298,9 +345,18 @@ public class Find extends javax.swing.JDialog {
                     // Scroll to make the rectangle visible
                     textFile.scrollRectToVisible(viewRect);
                     // Highlight the text
+                    
                     textFile.select(pos, pos+findLength);
-                    // Move the search position beyond the current match
-                    pos += findLength;                    
+                    if (replace) {
+                       textFile.replaceSelection(replaceTxt);
+                       pos+=replaceTxt.length();
+                       textFile.setCaretPosition(pos );
+                    textFile.moveCaretPosition(pos-replaceTxt.length());
+                    }else{
+                        // Move the search position beyond the current match
+                        pos += findLength;  
+                    }
+                                      
                     }
 
             } catch (BadLocationException exp) {
@@ -317,7 +373,7 @@ public class Find extends javax.swing.JDialog {
                 while (pos - findLength >= 0) {
                     // Extract the text from the docuemnt
                     String match = document.getText(pos-findLength, findLength);
-                    if (!matchCaseText.isSelected()) {
+                    if (!matchCaseVal) {
                         match=match.toLowerCase();
                     }
                     // Check to see if it matches or request
@@ -350,6 +406,55 @@ public class Find extends javax.swing.JDialog {
             } catch (BadLocationException exp) {
                 exp.printStackTrace(System.out);
             }
+        }
+    }
+
+    void replaceAll() {
+       pos=0;
+       // Focus the text area, otherwise the highlighting won't show up
+        textFile.requestFocusInWindow();
+        int findLength = find.length();
+         Document document = textFile.getDocument();
+        while(find != null && find.length() > 0&& pos + findLength <= document.getLength()){            
+            try {
+                boolean found = false;
+                
+                // While we haven't reached the end...
+                // "<=" Correction
+                while (pos + findLength <= document.getLength()) {
+                    // Extract the text from the docuemnt
+                    String match = document.getText(pos, findLength);
+                    if (!matchCaseVal) {
+                        match=match.toLowerCase();
+                    }
+                    // Check to see if it matches or request
+                    if (match.equals(find)) {
+                        found = true;
+                        break;
+                    }
+                    pos++;
+                }
+
+                // Did we find something...
+                if (found) {
+                    // Get the rectangle of the where the text would be visible...
+                    Rectangle viewRect = textFile.modelToView(pos);
+                    // Scroll to make the rectangle visible
+                    textFile.scrollRectToVisible(viewRect);
+                    // Highlight the text
+                    
+                    textFile.select(pos, pos+findLength);
+                    
+                       textFile.replaceSelection(replaceTxt);
+                     pos+=replaceTxt.length();
+                     textFile.setCaretPosition(pos );
+                    textFile.moveCaretPosition(pos-replaceTxt.length());
+                    }
+
+            } catch (BadLocationException exp) {
+                exp.printStackTrace(System.out);
+            }
+        
         }
     }
 }

@@ -76,10 +76,12 @@ public class Notepad extends javax.swing.JFrame {
     private JFontChooser chooser;
     private CaretListener caretListener;
     private Find find;
+    private FindReplace findReplace;
     
     public Notepad() {
         initComponents();
-        CutAction cutAction=new CutAction("Cut", null);
+        setLocationRelativeTo(null);
+        cutAction=new CutAction("Cut", null);
         cutAction.setTextComponent(textFile);
         font=new Font("Calibri",Font.PLAIN , 11);
         chooser=new JFontChooser();
@@ -90,6 +92,7 @@ public class Notepad extends javax.swing.JFrame {
         manager = new UndoManager();
         textFile.getDocument().addUndoableEditListener(manager);
         find=new Find(this,false,textFile);
+        this.findReplace = new FindReplace(this, false,find);
         fileChooser = new JFileChooser(){
         @Override
         public void approveSelection(){
@@ -226,7 +229,7 @@ public class Notepad extends javax.swing.JFrame {
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
         menuFind = new javax.swing.JMenuItem();
         menuFindNext = new javax.swing.JMenuItem();
-        jMenuItem10 = new javax.swing.JMenuItem();
+        menuReplace = new javax.swing.JMenuItem();
         jMenuItem11 = new javax.swing.JMenuItem();
         jSeparator5 = new javax.swing.JPopupMenu.Separator();
         menuSelect = new javax.swing.JMenuItem();
@@ -378,9 +381,14 @@ public class Notepad extends javax.swing.JFrame {
         });
         menuEdit.add(menuFindNext);
 
-        jMenuItem10.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem10.setText("Replace...");
-        menuEdit.add(jMenuItem10);
+        menuReplace.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H, java.awt.event.InputEvent.CTRL_MASK));
+        menuReplace.setText("Replace...");
+        menuReplace.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuReplaceActionPerformed(evt);
+            }
+        });
+        menuEdit.add(menuReplace);
 
         jMenuItem11.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem11.setText("Go To...");
@@ -566,7 +574,7 @@ public class Notepad extends javax.swing.JFrame {
             menuDelete.setEnabled(false);            
         }
         if (textFile.getText().length()!=0) {
-            menuFind.setEnabled(true);
+            menuFind.setEnabled(true);            
             menuFindNext.setEnabled(true);
         } else {
             menuFind.setEnabled(false);
@@ -609,6 +617,10 @@ public class Notepad extends javax.swing.JFrame {
     private void menuFindNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuFindNextActionPerformed
         find.findNextMenu();
     }//GEN-LAST:event_menuFindNextActionPerformed
+
+    private void menuReplaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuReplaceActionPerformed
+       findReplace.setVisible(true);
+    }//GEN-LAST:event_menuReplaceActionPerformed
     
     /**
      * @param args the command line arguments
@@ -651,7 +663,6 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem10;
     private javax.swing.JMenuItem jMenuItem11;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
@@ -673,6 +684,7 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuPageSetup;
     private javax.swing.JMenuItem menuPaste;
     private javax.swing.JMenuItem menuPrint;
+    private javax.swing.JMenuItem menuReplace;
     private javax.swing.JMenuItem menuSaveAs;
     private javax.swing.JMenuItem menuSelect;
     private javax.swing.JCheckBoxMenuItem menuStatusBar;
