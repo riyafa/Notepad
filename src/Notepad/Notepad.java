@@ -6,6 +6,7 @@
 
 package Notepad;
 
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -22,18 +23,25 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JTextArea;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicTextUI;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.StyleContext;
 import javax.swing.text.View;
@@ -64,18 +72,24 @@ public class Notepad extends javax.swing.JFrame {
     private UndoManager manager;
     private boolean unredo=true;
     private BasicAction cutAction, pasteAction,copyAction;
-    
+    private Font font;
+    private JFontChooser chooser;
+    private CaretListener caretListener;
+    private Find find;
     
     public Notepad() {
         initComponents();
         CutAction cutAction=new CutAction("Cut", null);
         cutAction.setTextComponent(textFile);
-        
+        font=new Font("Calibri",Font.PLAIN , 11);
+        chooser=new JFontChooser();
+        textFile.setFont(font);
         m_context = new StyleContext();
         m_doc = new DefaultStyledDocument(m_context);
         textFile.setDocument(m_doc);
         manager = new UndoManager();
         textFile.getDocument().addUndoableEditListener(manager);
+        find=new Find(this,false,textFile);
         fileChooser = new JFileChooser(){
         @Override
         public void approveSelection(){
@@ -139,9 +153,36 @@ public class Notepad extends javax.swing.JFrame {
          pj = PrinterJob.getPrinterJob();
          
          printable=new Printer();
-         pj.setPrintable(printable);
-         
-       
+         pj.setPrintable(printable);      
+         caretListener=(CaretEvent e) -> {
+            JTextArea editArea = (JTextArea)e.getSource();
+            
+            // Lets start with some default values for the line and column.
+            int linenum = 1;
+            int columnnum = 1;
+            
+            // We create a try catch to catch any exceptions. We will simply ignore such an error for our demonstration.
+            try {
+                // First we find the position of the caret. This is the number of where the caret is in relation to the start of the JTextArea
+                // in the upper left corner. We use this position to find offset values (eg what line we are on for the given position as well as
+                // what position that line starts on.
+                int caretpos = editArea.getCaretPosition();
+                linenum = editArea.getLineOfOffset(caretpos);
+                
+                // We subtract the offset of where our line starts from the overall caret position.
+                // So lets say that we are on line 5 and that line starts at caret position 100, if our caret position is currently 106
+                // we know that we must be on column 6 of line 5.
+                columnnum = caretpos - editArea.getLineStartOffset(linenum)+1;
+                
+                // We have to add one here because line numbers start at 0 for getLineOfOffset and we want it to start at 1 for display.
+                linenum += 1;
+            }
+            catch(BadLocationException ex) { }
+            
+            // Once we know the position of the line and the column
+            labellncol.setText("Ln "+linenum+", Col "+columnnum);
+            
+            };
 }
 
     /**
@@ -155,6 +196,9 @@ public class Notepad extends javax.swing.JFrame {
 
         scrollPane = new javax.swing.JScrollPane();
         textFile = new javax.swing.JTextArea();
+        statusBar = new javax.swing.JToolBar();
+        jSeparator7 = new javax.swing.JToolBar.Separator();
+        labellncol = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menuNew = new javax.swing.JMenuItem();
@@ -181,21 +225,17 @@ public class Notepad extends javax.swing.JFrame {
         menuDelete = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
         menuFind = new javax.swing.JMenuItem();
-        jMenuItem9 = new javax.swing.JMenuItem();
+        menuFindNext = new javax.swing.JMenuItem();
         jMenuItem10 = new javax.swing.JMenuItem();
         jMenuItem11 = new javax.swing.JMenuItem();
         jSeparator5 = new javax.swing.JPopupMenu.Separator();
         menuSelect = new javax.swing.JMenuItem();
-        jMenuItem13 = new javax.swing.JMenuItem();
+        menuTimeDate = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
-        jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
-        jMenuItem17 = new javax.swing.JMenuItem();
+        menuWordWrap = new javax.swing.JCheckBoxMenuItem();
+        menuFont = new javax.swing.JMenuItem();
         jMenu4 = new javax.swing.JMenu();
-        jMenuItem14 = new javax.swing.JMenuItem();
-        jMenu5 = new javax.swing.JMenu();
-        jMenuItem15 = new javax.swing.JMenuItem();
-        jSeparator6 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem16 = new javax.swing.JMenuItem();
+        menuStatusBar = new javax.swing.JCheckBoxMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(964, 524));
@@ -205,6 +245,16 @@ public class Notepad extends javax.swing.JFrame {
         scrollPane.setViewportView(textFile);
 
         getContentPane().add(scrollPane, java.awt.BorderLayout.CENTER);
+
+        statusBar.add( Box.createHorizontalGlue() );
+        statusBar.setRollover(true);
+        statusBar.setVisible(false);
+        statusBar.add(jSeparator7);
+
+        labellncol.setText("Ln 1, Col 1");
+        statusBar.add(labellncol);
+
+        getContentPane().add(statusBar, java.awt.BorderLayout.PAGE_END);
 
         jMenu1.setText("File");
 
@@ -318,10 +368,15 @@ public class Notepad extends javax.swing.JFrame {
         });
         menuEdit.add(menuFind);
 
-        jMenuItem9.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F3, 0));
-        jMenuItem9.setText("Find Next");
-        jMenuItem9.setEnabled(false);
-        menuEdit.add(jMenuItem9);
+        menuFindNext.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F3, 0));
+        menuFindNext.setText("Find Next");
+        menuFindNext.setEnabled(false);
+        menuFindNext.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuFindNextActionPerformed(evt);
+            }
+        });
+        menuEdit.add(menuFindNext);
 
         jMenuItem10.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem10.setText("Replace...");
@@ -343,46 +398,48 @@ public class Notepad extends javax.swing.JFrame {
         });
         menuEdit.add(menuSelect);
 
-        jMenuItem13.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
-        jMenuItem13.setText("Time/Date");
-        jMenuItem13.addActionListener(new java.awt.event.ActionListener() {
+        menuTimeDate.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
+        menuTimeDate.setText("Time/Date");
+        menuTimeDate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem13ActionPerformed(evt);
+                menuTimeDateActionPerformed(evt);
             }
         });
-        menuEdit.add(jMenuItem13);
+        menuEdit.add(menuTimeDate);
 
         jMenuBar1.add(menuEdit);
 
         jMenu3.setText("Format");
 
-        jCheckBoxMenuItem1.setSelected(true);
-        jCheckBoxMenuItem1.setText("Word Wrap");
-        jMenu3.add(jCheckBoxMenuItem1);
+        menuWordWrap.setText("Word Wrap");
+        menuWordWrap.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuWordWrapActionPerformed(evt);
+            }
+        });
+        jMenu3.add(menuWordWrap);
 
-        jMenuItem17.setText("Font...");
-        jMenu3.add(jMenuItem17);
+        menuFont.setText("Font...");
+        menuFont.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuFontActionPerformed(evt);
+            }
+        });
+        jMenu3.add(menuFont);
 
         jMenuBar1.add(jMenu3);
 
         jMenu4.setText("View");
 
-        jMenuItem14.setEnabled(false);
-        jMenuItem14.setLabel("Status Bar");
-        jMenu4.add(jMenuItem14);
+        menuStatusBar.setText("Status Bar");
+        menuStatusBar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuStatusBarActionPerformed(evt);
+            }
+        });
+        jMenu4.add(menuStatusBar);
 
         jMenuBar1.add(jMenu4);
-
-        jMenu5.setText("Help");
-
-        jMenuItem15.setLabel("View Help");
-        jMenu5.add(jMenuItem15);
-        jMenu5.add(jSeparator6);
-
-        jMenuItem16.setLabel("About Notepad");
-        jMenu5.add(jMenuItem16);
-
-        jMenuBar1.add(jMenu5);
 
         setJMenuBar(jMenuBar1);
 
@@ -397,9 +454,9 @@ public class Notepad extends javax.swing.JFrame {
        textFile.replaceSelection("");
     }//GEN-LAST:event_jMenuItem7ActionPerformed
 
-    private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem13ActionPerformed
+    private void menuTimeDateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuTimeDateActionPerformed
+        textFile.insert(new SimpleDateFormat("HH:mm yyyy-MM-dd").format(new Date()), textFile.getCaretPosition());
+    }//GEN-LAST:event_menuTimeDateActionPerformed
 
     private void saveMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuActionPerformed
        save();         
@@ -469,42 +526,12 @@ public class Notepad extends javax.swing.JFrame {
         
     }//GEN-LAST:event_menuUndoActionPerformed
 
-    private void menuEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuEditActionPerformed
-        System.out.println(cutAction.isEnabled());
-        if (cutAction.isEnabled()) {
-            menuCut.setEnabled(true);
-        }else{
-            menuCut.setEnabled(false);
-        }
-        if (copyAction.isEnabled()) {
-            menuCopy.setEnabled(true);
-        }else{
-            menuCopy.setEnabled(false);
-        }
-        if (pasteAction.isEnabled()) {
-            menuPaste.setEnabled(true);
-        }else{
-            menuPaste.setEnabled(false);
-        }
-        if (textFile.getSelectedText() == null &&
-            textFile.getSelectedText().length() <= textFile.getText().length()) {
-            menuSelect.setEnabled(false);
-        } else {
-            menuSelect.setEnabled(true);
-        }
-        if (textFile.getSelectedText()!=null) {
-            menuDelete.setEnabled(true);
-        } else {
-            menuDelete.setEnabled(false);
-        }
-    }//GEN-LAST:event_menuEditActionPerformed
-
     private void menuSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuSelectActionPerformed
        textFile.selectAll();
     }//GEN-LAST:event_menuSelectActionPerformed
 
     private void menuFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuFindActionPerformed
-       
+        find.setVisible(true);
     }//GEN-LAST:event_menuFindActionPerformed
 
     private void menuDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuDeleteActionPerformed
@@ -527,18 +554,61 @@ public class Notepad extends javax.swing.JFrame {
         }else{
             menuPaste.setEnabled(false);
         }
-        if (textFile.getSelectedText() == null &&
+        if (textFile.getSelectedText() != null &&
             textFile.getSelectedText().length() <= textFile.getText().length()) {
             menuSelect.setEnabled(false);
         } else {
             menuSelect.setEnabled(true);
         }
         if (textFile.getSelectedText()!=null) {
-            menuDelete.setEnabled(true);
+            menuDelete.setEnabled(true);            
         } else {
-            menuDelete.setEnabled(false);
+            menuDelete.setEnabled(false);            
+        }
+        if (textFile.getText().length()!=0) {
+            menuFind.setEnabled(true);
+            menuFindNext.setEnabled(true);
+        } else {
+            menuFind.setEnabled(false);
+            menuFindNext.setEnabled(false);
         }
     }//GEN-LAST:event_menuEditMenuSelected
+
+    private void menuWordWrapActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuWordWrapActionPerformed
+        if (menuWordWrap.isSelected()) {
+            textFile.setLineWrap(true);
+            textFile.setWrapStyleWord(true);
+        }else{
+            textFile.setLineWrap(false);
+            textFile.setWrapStyleWord(false);
+        }
+    }//GEN-LAST:event_menuWordWrapActionPerformed
+
+    private void menuFontActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuFontActionPerformed
+        chooser.setSelectedFont(font);
+        chooser.showDialog(this);
+       font=chooser.getSelectedFont();
+       textFile.setFont(font);
+    }//GEN-LAST:event_menuFontActionPerformed
+
+    private void menuStatusBarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuStatusBarActionPerformed
+        if (menuStatusBar.isSelected()) {
+            statusBar.setVisible(true);
+            // Add a caretListener to the editor. This is an anonymous class because it is inline and has no specific name.
+            textFile.addCaretListener(caretListener);
+            try {
+                labellncol.setText("Ln "+(textFile.getLineOfOffset(textFile.getCaretPosition())+1)+", Col "+(textFile.getCaretPosition() - textFile.getLineStartOffset(textFile.getLineOfOffset(textFile.getCaretPosition()))+1));
+            } catch (BadLocationException ex) {
+            }
+        }else{
+            statusBar.setVisible(false);
+            textFile.removeCaretListener(caretListener);
+        }
+    }//GEN-LAST:event_menuStatusBarActionPerformed
+
+    private void menuFindNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuFindNextActionPerformed
+        find.findNextMenu();
+    }//GEN-LAST:event_menuFindNextActionPerformed
     
     /**
      * @param args the command line arguments
@@ -577,32 +647,27 @@ public class Notepad extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
-    private javax.swing.JMenu jMenu5;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem10;
     private javax.swing.JMenuItem jMenuItem11;
-    private javax.swing.JMenuItem jMenuItem13;
-    private javax.swing.JMenuItem jMenuItem14;
-    private javax.swing.JMenuItem jMenuItem15;
-    private javax.swing.JMenuItem jMenuItem16;
-    private javax.swing.JMenuItem jMenuItem17;
-    private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JPopupMenu.Separator jSeparator5;
-    private javax.swing.JPopupMenu.Separator jSeparator6;
+    private javax.swing.JToolBar.Separator jSeparator7;
+    private javax.swing.JLabel labellncol;
     private javax.swing.JMenuItem menuCopy;
     private javax.swing.JMenuItem menuCut;
     private javax.swing.JMenuItem menuDelete;
     private javax.swing.JMenu menuEdit;
     private javax.swing.JMenuItem menuExit;
     private javax.swing.JMenuItem menuFind;
+    private javax.swing.JMenuItem menuFindNext;
+    private javax.swing.JMenuItem menuFont;
     private javax.swing.JMenuItem menuNew;
     private javax.swing.JMenuItem menuOpen;
     private javax.swing.JMenuItem menuPageSetup;
@@ -610,9 +675,13 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuPrint;
     private javax.swing.JMenuItem menuSaveAs;
     private javax.swing.JMenuItem menuSelect;
+    private javax.swing.JCheckBoxMenuItem menuStatusBar;
+    private javax.swing.JMenuItem menuTimeDate;
     private javax.swing.JMenuItem menuUndo;
+    private javax.swing.JCheckBoxMenuItem menuWordWrap;
     private javax.swing.JMenuItem saveMenu;
     private javax.swing.JScrollPane scrollPane;
+    private javax.swing.JToolBar statusBar;
     private javax.swing.JTextArea textFile;
     // End of variables declaration//GEN-END:variables
 

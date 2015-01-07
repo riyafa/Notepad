@@ -6,20 +6,61 @@
 
 package Notepad;
 
+import java.awt.Rectangle;
+import javax.swing.JOptionPane;
+import javax.swing.JTextArea;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+
 /**
  *
  * @author A.H.F. Riyafa
  */
-public class FInd extends javax.swing.JDialog {
-
+public class Find extends javax.swing.JDialog {
+    private JTextArea textFile;
+    private int pos;
+    private String findIt=null, find;
     /**
      * Creates new form FInd
      */
-    public FInd(java.awt.Frame parent, boolean modal) {
+    public Find(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
+        this.pos = 0;
         initComponents();
     }
 
+    public Find(java.awt.Frame parent, boolean modal,JTextArea textFile){
+        this(parent,modal);
+        this.pos = 0;
+        this.textFile=textFile;
+        findField.getDocument().addDocumentListener(new DocumentListener() {
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                buttonFind.setEnabled(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (findField.getText().length()!=0) {
+                    buttonFind.setEnabled(true);
+                }else{
+                    buttonFind.setEnabled(false);
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                if (findField.getText().length()!=0) {
+                    buttonFind.setEnabled(true);
+                }else{
+                    buttonFind.setEnabled(false);
+                }
+            }
+        });
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -32,13 +73,13 @@ public class FInd extends javax.swing.JDialog {
         jTextField1 = new javax.swing.JTextField();
         upDownGrp = new javax.swing.ButtonGroup();
         jLabel1 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
-        jButton1 = new javax.swing.JButton();
+        findField = new javax.swing.JTextField();
+        buttonFind = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
-        jRadioButton1 = new javax.swing.JRadioButton();
-        jRadioButton2 = new javax.swing.JRadioButton();
-        jCheckBox1 = new javax.swing.JCheckBox();
+        upRadio = new javax.swing.JRadioButton();
+        downRadio = new javax.swing.JRadioButton();
+        matchCaseText = new javax.swing.JCheckBox();
 
         jTextField1.setText("jTextField1");
 
@@ -48,18 +89,29 @@ public class FInd extends javax.swing.JDialog {
 
         jLabel1.setText("Find what:");
 
-        jButton1.setText("Find Next");
+        buttonFind.setText("Find Next");
+        buttonFind.setEnabled(false);
+        buttonFind.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonFindActionPerformed(evt);
+            }
+        });
 
         jButton2.setText("Cancel");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Direction"));
 
-        upDownGrp.add(jRadioButton1);
-        jRadioButton1.setText("Up");
+        upDownGrp.add(upRadio);
+        upRadio.setText("Up");
 
-        upDownGrp.add(jRadioButton2);
-        jRadioButton2.setSelected(true);
-        jRadioButton2.setText("Down");
+        upDownGrp.add(downRadio);
+        downRadio.setSelected(true);
+        downRadio.setText("Down");
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -67,9 +119,9 @@ public class FInd extends javax.swing.JDialog {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGap(18, 18, 18)
-                .addComponent(jRadioButton1)
+                .addComponent(upRadio)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jRadioButton2)
+                .addComponent(downRadio)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
@@ -77,12 +129,12 @@ public class FInd extends javax.swing.JDialog {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap(12, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jRadioButton1)
-                    .addComponent(jRadioButton2))
+                    .addComponent(upRadio)
+                    .addComponent(downRadio))
                 .addContainerGap())
         );
 
-        jCheckBox1.setText("Match case");
+        matchCaseText.setText("Match case");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -94,15 +146,15 @@ public class FInd extends javax.swing.JDialog {
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(findField, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jCheckBox1)
+                        .addComponent(matchCaseText)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1))
+                    .addComponent(buttonFind))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -111,8 +163,8 @@ public class FInd extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1))
+                    .addComponent(findField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(buttonFind))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -122,12 +174,26 @@ public class FInd extends javax.swing.JDialog {
                         .addContainerGap(19, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jCheckBox1)
+                        .addComponent(matchCaseText)
                         .addContainerGap())))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void buttonFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonFindActionPerformed
+       // Get the text to find...convert it to lower case for eaiser comparision
+        findIt = findField.getText();   
+         find=findIt;
+        if (!matchCaseText.isSelected()) {
+            find=findIt.toLowerCase();
+        }
+        findNext();
+    }//GEN-LAST:event_buttonFindActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        setVisible(false);
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -146,20 +212,20 @@ public class FInd extends javax.swing.JDialog {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(FInd.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Find.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(FInd.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Find.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(FInd.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Find.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(FInd.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Find.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                FInd dialog = new FInd(new javax.swing.JFrame(), true);
+                Find dialog = new Find(new javax.swing.JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override
                     public void windowClosing(java.awt.event.WindowEvent e) {
@@ -172,15 +238,118 @@ public class FInd extends javax.swing.JDialog {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton buttonFind;
+    private javax.swing.JRadioButton downRadio;
+    private javax.swing.JTextField findField;
     private javax.swing.JButton jButton2;
-    private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JRadioButton jRadioButton1;
-    private javax.swing.JRadioButton jRadioButton2;
     private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
+    private javax.swing.JCheckBox matchCaseText;
     private javax.swing.ButtonGroup upDownGrp;
+    private javax.swing.JRadioButton upRadio;
     // End of variables declaration//GEN-END:variables
+
+    public void findNextMenu(){
+        if (findIt==null) {
+            setVisible(true);
+        }else{
+            findNext();
+        }
+    }
+
+    private void findNext() {
+        
+         pos=textFile.getCaretPosition();
+        // Focus the text area, otherwise the highlighting won't show up
+        textFile.requestFocusInWindow();
+        // Make sure we have a valid search term
+        if (find != null && find.length() > 0 && downRadio.isSelected()) {
+            Document document = textFile.getDocument();           
+            int findLength = find.length();
+            try {
+                boolean found = false;
+                
+                // While we haven't reached the end...
+                // "<=" Correction
+                while (pos + findLength <= document.getLength()) {
+                    // Extract the text from teh docuemnt
+                    String match = document.getText(pos, findLength);
+                    if (!matchCaseText.isSelected()) {
+                        match=match.toLowerCase();
+                    }
+                    // Check to see if it matches or request
+                    if (match.equals(find)) {
+                        found = true;
+                        break;
+                    }
+                    pos++;
+                }
+
+                // infomsg if we're at the end of the document
+                if (pos + findLength > document.getLength()) {
+                    JOptionPane.showMessageDialog(this,"Cannot find \""+findIt+"\"",
+                            "Notepad", JOptionPane.INFORMATION_MESSAGE); 
+                }
+                // Did we find something...
+                if (found) {
+                    // Get the rectangle of the where the text would be visible...
+                    Rectangle viewRect = textFile.modelToView(pos);
+                    // Scroll to make the rectangle visible
+                    textFile.scrollRectToVisible(viewRect);
+                    // Highlight the text
+                    textFile.select(pos, pos+findLength);
+                    // Move the search position beyond the current match
+                    pos += findLength;                    
+                    }
+
+            } catch (BadLocationException exp) {
+                exp.printStackTrace(System.out);
+            }
+        }else if (find != null && find.length() > 0 && upRadio.isSelected()) {
+            Document document = textFile.getDocument();
+            int findLength = find.length();
+            try {
+                boolean found = false;
+               
+                // While we haven't reached the beginning...
+                // ">=" Correction
+                while (pos - findLength >= 0) {
+                    // Extract the text from the docuemnt
+                    String match = document.getText(pos-findLength, findLength);
+                    if (!matchCaseText.isSelected()) {
+                        match=match.toLowerCase();
+                    }
+                    // Check to see if it matches or request
+                    if (match.equals(find)) {
+                        found = true;
+                        break;
+                    }
+                    pos--;
+                }
+                 // infomsg  if we're at the beginning of the document
+                if (pos - findLength < 0) {
+                    JOptionPane.showMessageDialog(this,"Cannot find \""+findIt+"\"",
+                            "Notepad", JOptionPane.INFORMATION_MESSAGE); 
+                }
+                // Did we find something...
+                if (found) {
+                    // Get the rectangle of the where the text would be visible...
+                    Rectangle viewRect = textFile.modelToView(pos);
+                    // Scroll to make the rectangle visible
+                    textFile.scrollRectToVisible(viewRect);
+                    // Highlight the text
+                   
+                    //textFile.select(pos+findLength, pos);
+                    textFile.setCaretPosition(pos );
+                    textFile.moveCaretPosition(pos-findLength);
+                    // Move the search position beyond the current match
+                    pos -= findLength;
+                    }
+
+            } catch (BadLocationException exp) {
+                exp.printStackTrace(System.out);
+            }
+        }
+    }
 }
